@@ -1,0 +1,144 @@
+# AgentSpec 示例：代码审查智能体
+version: "1.0.0"
+
+metadata:
+  name: code-reviewer
+  description: 专业的代码审查智能体，支持多种编程语言，提供代码质量分析、安全漏洞检测和优化建议
+  author: agenthub
+  license: Apache-2.0
+  tags:
+    - coding
+    - review
+    - security
+    - quality
+  category: coding
+  repository: https://github.com/agenthub/code-reviewer
+
+runtime:
+  type: python
+  entry: agent.py
+  python:
+    version: "3.11"
+    requirements: requirements.txt
+
+model:
+  provider: anthropic
+  name: claude-3-5-sonnet
+  parameters:
+    temperature: 0.3
+    max_tokens: 8192
+
+capabilities:
+  streaming: true
+  multimodal:
+    text: true
+    image: true  # 支持代码截图
+  tools:
+    - name: analyze_code
+      description: 分析代码结构和复杂度
+      parameters:
+        type: object
+        properties:
+          code:
+            type: string
+            description: 要分析的代码
+          language:
+            type: string
+            description: 编程语言
+        required: [code]
+    - name: check_security
+      description: 检查安全漏洞
+      parameters:
+        type: object
+        properties:
+          code:
+            type: string
+          rules:
+            type: array
+            items:
+              type: string
+        required: [code]
+    - name: suggest_refactor
+      description: 提供重构建议
+      parameters:
+        type: object
+        properties:
+          code:
+            type: string
+          target:
+            type: string
+            enum: [performance, readability, maintainability]
+        required: [code]
+  memory:
+    conversation: true
+    long_term: false
+    vector_store: true  # 存储代码库上下文
+
+interface:
+  input:
+    type: json
+    schema:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 要审查的代码
+        language:
+          type: string
+          description: 编程语言
+        context:
+          type: string
+          description: 额外上下文信息
+      required: [code]
+  output:
+    type: json
+    schema:
+      type: object
+      properties:
+        summary:
+          type: string
+          description: 审查总结
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              severity:
+                type: string
+                enum: [critical, warning, info]
+              line:
+                type: integer
+              message:
+                type: string
+              suggestion:
+                type: string
+        score:
+          type: integer
+          description: 代码质量评分 (0-100)
+
+prompts:
+  system_file: prompts/code_reviewer_system.md
+  examples:
+    - input: |
+        请审查这段Python代码：
+        def login(username, password):
+            query = f"SELECT * FROM users WHERE username='{username}' AND password='{password}'"
+            return db.execute(query)
+      output: |
+        ## 代码审查结果
+        
+        ### 🔴 严重问题
+        1. **SQL注入漏洞** (第2行)
+           - 直接拼接用户输入到SQL语句
+           - 建议：使用参数化查询
+        
+        ### 评分: 20/100
+
+resources:
+  cpu: "2"
+  memory: "1Gi"
+  timeout: 120
+
+pricing:
+  model: pay-per-use
+  price_per_call: 0.01

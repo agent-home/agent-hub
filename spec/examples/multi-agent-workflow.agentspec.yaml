@@ -1,0 +1,123 @@
+# AgentSpec 示例：多智能体工作流
+version: "1.0.0"
+
+metadata:
+  name: research-team
+  description: 研究团队工作流，由多个专业智能体协作完成深度研究任务
+  author: agenthub
+  license: MIT
+  tags:
+    - workflow
+    - research
+    - multi-agent
+    - collaboration
+  category: research
+
+# 多智能体工作流配置
+workflow:
+  type: orchestrated
+  agents:
+    - id: researcher
+      ref: agenthub/web-researcher@latest
+      role: 负责收集和整理资料
+      
+    - id: analyst
+      ref: agenthub/data-analyst@latest
+      role: 负责分析数据和提取洞察
+      
+    - id: writer
+      ref: agenthub/content-writer@latest
+      role: 负责撰写最终报告
+      
+    - id: reviewer
+      ref: agenthub/quality-checker@latest
+      role: 负责审核和质量把控
+
+  # 工作流步骤定义
+  steps:
+    - name: research
+      agent: researcher
+      input: 
+        query: "{{user_input.topic}}"
+        depth: deep
+      output: research_results
+      
+    - name: analyze
+      agent: analyst
+      input:
+        data: "{{steps.research.output}}"
+        focus: "{{user_input.focus_areas}}"
+      output: analysis_results
+      depends_on: [research]
+      
+    - name: write
+      agent: writer
+      input:
+        research: "{{steps.research.output}}"
+        analysis: "{{steps.analyze.output}}"
+        format: "{{user_input.output_format}}"
+      output: draft_report
+      depends_on: [research, analyze]
+      
+    - name: review
+      agent: reviewer
+      input:
+        document: "{{steps.write.output}}"
+        criteria:
+          - accuracy
+          - completeness
+          - clarity
+      output: final_report
+      depends_on: [write]
+      
+      # 如果审核不通过，返回修改
+      on_failure:
+        goto: write
+        max_retries: 2
+
+runtime:
+  type: docker
+  docker:
+    image: agenthub/workflow-runtime:latest
+
+interface:
+  input:
+    type: json
+    schema:
+      type: object
+      properties:
+        topic:
+          type: string
+          description: 研究主题
+        focus_areas:
+          type: array
+          items:
+            type: string
+          description: 重点关注领域
+        output_format:
+          type: string
+          enum: [report, presentation, summary]
+          default: report
+      required: [topic]
+  output:
+    type: json
+    schema:
+      type: object
+      properties:
+        report:
+          type: string
+        sources:
+          type: array
+        key_findings:
+          type: array
+        confidence_score:
+          type: number
+
+resources:
+  cpu: "4"
+  memory: "4Gi"
+  timeout: 1800  # 30分钟超时
+
+pricing:
+  model: pay-per-use
+  price_per_call: 0.5

@@ -1,0 +1,50 @@
+# AgentSpec 示例：简单助手智能体
+version: "1.0.0"
+
+metadata:
+  name: simple-assistant
+  description: 一个简单的通用助手智能体，可以回答问题、提供建议和帮助完成各种任务
+  author: agenthub
+  license: MIT
+  tags:
+    - assistant
+    - general
+    - helpful
+  category: assistant
+
+runtime:
+  type: prompt
+  entry: prompts/system.md
+
+model:
+  provider: openai
+  name: gpt-4o
+  parameters:
+    temperature: 0.7
+    max_tokens: 4096
+
+capabilities:
+  streaming: true
+  multimodal:
+    text: true
+    image: false
+  memory:
+    conversation: true
+    long_term: false
+
+interface:
+  input:
+    type: text
+  output:
+    type: stream
+
+prompts:
+  system: |
+    你是一个友好、专业的AI助手。你的目标是：
+    1. 准确理解用户的需求
+    2. 提供清晰、有帮助的回答
+    3. 在不确定时坦诚告知
+    4. 保持礼貌和耐心
+
+pricing:
+  model: free

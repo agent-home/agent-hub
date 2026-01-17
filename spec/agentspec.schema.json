@@ -1,0 +1,294 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://agenthub.dev/schemas/agentspec/v1.0.0",
+  "title": "AgentSpec",
+  "description": "智能体规范定义 - AgentHub 标准格式",
+  "type": "object",
+  "required": ["version", "metadata", "runtime"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "AgentSpec 规范版本",
+      "enum": ["1.0.0"]
+    },
+    "metadata": {
+      "type": "object",
+      "description": "智能体元数据",
+      "required": ["name", "description", "author"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "智能体名称",
+          "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+          "minLength": 3,
+          "maxLength": 64
+        },
+        "description": {
+          "type": "string",
+          "description": "智能体简介",
+          "maxLength": 500
+        },
+        "author": {
+          "type": "string",
+          "description": "作者/组织名称"
+        },
+        "license": {
+          "type": "string",
+          "description": "开源协议",
+          "default": "MIT"
+        },
+        "tags": {
+          "type": "array",
+          "description": "标签列表",
+          "items": { "type": "string" },
+          "maxItems": 10
+        },
+        "homepage": {
+          "type": "string",
+          "format": "uri",
+          "description": "项目主页"
+        },
+        "repository": {
+          "type": "string",
+          "format": "uri",
+          "description": "代码仓库地址"
+        },
+        "category": {
+          "type": "string",
+          "description": "智能体分类",
+          "enum": [
+            "assistant",
+            "coding",
+            "writing",
+            "analysis",
+            "creative",
+            "education",
+            "business",
+            "research",
+            "tooling",
+            "other"
+          ]
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "description": "运行时配置",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "运行时类型",
+          "enum": ["prompt", "python", "nodejs", "docker", "remote"]
+        },
+        "entry": {
+          "type": "string",
+          "description": "入口文件或端点"
+        },
+        "python": {
+          "type": "object",
+          "description": "Python 运行时配置",
+          "properties": {
+            "version": {
+              "type": "string",
+              "default": "3.11"
+            },
+            "requirements": {
+              "type": "string",
+              "description": "依赖文件路径",
+              "default": "requirements.txt"
+            }
+          }
+        },
+        "nodejs": {
+          "type": "object",
+          "description": "Node.js 运行时配置",
+          "properties": {
+            "version": {
+              "type": "string",
+              "default": "20"
+            },
+            "package": {
+              "type": "string",
+              "default": "package.json"
+            }
+          }
+        },
+        "docker": {
+          "type": "object",
+          "description": "Docker 运行时配置",
+          "properties": {
+            "image": { "type": "string" },
+            "dockerfile": { "type": "string" }
+          }
+        },
+        "remote": {
+          "type": "object",
+          "description": "远程服务配置",
+          "properties": {
+            "endpoint": {
+              "type": "string",
+              "format": "uri"
+            },
+            "protocol": {
+              "type": "string",
+              "enum": ["http", "grpc", "websocket"]
+            }
+          }
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "description": "底层模型配置",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "description": "模型提供商",
+          "enum": ["openai", "anthropic", "google", "local", "custom"]
+        },
+        "name": {
+          "type": "string",
+          "description": "模型名称"
+        },
+        "parameters": {
+          "type": "object",
+          "description": "模型参数",
+          "properties": {
+            "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+            "max_tokens": { "type": "integer", "minimum": 1 },
+            "top_p": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "description": "智能体能力声明",
+      "properties": {
+        "streaming": {
+          "type": "boolean",
+          "description": "是否支持流式输出",
+          "default": true
+        },
+        "multimodal": {
+          "type": "object",
+          "description": "多模态能力",
+          "properties": {
+            "text": { "type": "boolean", "default": true },
+            "image": { "type": "boolean", "default": false },
+            "audio": { "type": "boolean", "default": false },
+            "video": { "type": "boolean", "default": false }
+          }
+        },
+        "tools": {
+          "type": "array",
+          "description": "支持的工具列表",
+          "items": {
+            "type": "object",
+            "required": ["name", "description"],
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "parameters": {
+                "type": "object",
+                "description": "JSON Schema 格式的参数定义"
+              }
+            }
+          }
+        },
+        "memory": {
+          "type": "object",
+          "description": "记忆能力",
+          "properties": {
+            "conversation": { "type": "boolean", "default": true },
+            "long_term": { "type": "boolean", "default": false },
+            "vector_store": { "type": "boolean", "default": false }
+          }
+        }
+      }
+    },
+    "interface": {
+      "type": "object",
+      "description": "接口定义",
+      "properties": {
+        "input": {
+          "type": "object",
+          "description": "输入格式",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["text", "json", "multipart"]
+            },
+            "schema": {
+              "type": "object",
+              "description": "JSON Schema 格式的输入定义"
+            }
+          }
+        },
+        "output": {
+          "type": "object",
+          "description": "输出格式",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["text", "json", "stream"]
+            },
+            "schema": {
+              "type": "object",
+              "description": "JSON Schema 格式的输出定义"
+            }
+          }
+        }
+      }
+    },
+    "prompts": {
+      "type": "object",
+      "description": "提示词配置",
+      "properties": {
+        "system": {
+          "type": "string",
+          "description": "系统提示词"
+        },
+        "system_file": {
+          "type": "string",
+          "description": "系统提示词文件路径"
+        },
+        "examples": {
+          "type": "array",
+          "description": "Few-shot 示例",
+          "items": {
+            "type": "object",
+            "properties": {
+              "input": { "type": "string" },
+              "output": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "description": "资源配置",
+      "properties": {
+        "cpu": { "type": "string", "default": "1" },
+        "memory": { "type": "string", "default": "512Mi" },
+        "gpu": { "type": "string" },
+        "timeout": { "type": "integer", "default": 300 }
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "description": "定价信息",
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": ["free", "pay-per-use", "subscription"],
+          "default": "free"
+        },
+        "price_per_call": { "type": "number" },
+        "price_per_token": { "type": "number" }
+      }
+    }
+  }
+}
